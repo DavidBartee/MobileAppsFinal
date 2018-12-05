@@ -40,12 +40,22 @@ public class GameActivity extends Activity {
         Paint paint;
         long fps;
         private long timeThisFrame;
+
+        int playerScore = 0;
+
         Bitmap playerbmp;
         int moveDirection = 0;
         //Units of movement and position are in percentages of the screen space
-        float moveSpeed = 15;
+        float moveSpeed = 12;
+        float playerSize = 13;
         float playerXPos = 50;
         float playerYPos = 70;
+
+        Bitmap laserbmp;
+        float laserXPos = 52;
+        float laserYPos = 800;
+        float laserSpeed = 10;
+        boolean laserActive = true;
 
         int height = Resources.getSystem().getDisplayMetrics().heightPixels;
         int width = Resources.getSystem().getDisplayMetrics().widthPixels;
@@ -66,6 +76,7 @@ public class GameActivity extends Activity {
             holder = getHolder();
             paint = new Paint();
             playerbmp = BitmapFactory.decodeResource(this.getResources(), R.drawable.player_ship);
+            laserbmp = BitmapFactory.decodeResource(this.getResources(), R.drawable.player_laser);
         }
 
         @Override
@@ -85,10 +96,17 @@ public class GameActivity extends Activity {
         public void update() {
             if (moveDirection != 0) {
                 playerXPos += (percentToWidth(moveSpeed) / fps) * moveDirection;
-                if (playerXPos < 5)
-                    playerXPos = 5;
-                if (playerXPos > 95 - 20)//20 is used as the player's size
-                    playerXPos = 95 - 20;
+                if (playerXPos < 3)
+                    playerXPos = 3;
+                if (playerXPos > 97 - playerSize)//20 is used as the player's size
+                    playerXPos = 97 - playerSize;
+            }
+            if (laserActive) {
+                laserYPos -= percentToHeight(laserSpeed) / (float)fps;
+                if (laserYPos < 1) {
+                    laserYPos = percentToHeight(68);
+                    laserXPos = percentToWidth(playerXPos + playerSize * 7f/16f);
+                }
             }
         }
 
@@ -100,19 +118,31 @@ public class GameActivity extends Activity {
                 paint.setTextSize(45);
                 canvas.drawText("FPS: " + fps, 20, 40, paint);
 
-                Rect pDest = new Rect((int)percentToWidth(playerXPos), (int)(percentToHeight(80) - percentToWidth(20)), (int)(percentToWidth(playerXPos + 20)), (int)percentToHeight(80));
+                Rect pDest = new Rect((int) percentToWidth(playerXPos),
+                        (int) (percentToHeight(80) - percentToWidth(playerSize)),
+                        (int) (percentToWidth(playerXPos + playerSize)),
+                        (int) percentToHeight(80));
                 paint.setAntiAlias(false);
                 paint.setFilterBitmap(false);
                 canvas.drawBitmap(playerbmp, null, pDest, paint);
 
+                if (laserActive) {
+                    Rect lDest = new Rect((int) percentToWidth(laserXPos),
+                            (int) (percentToHeight(laserYPos) - percentToWidth(playerSize * 6f/16f)),
+                            (int) percentToWidth(laserXPos + playerSize * 2f/16f),
+                            (int) percentToHeight(laserYPos));
+                    canvas.drawBitmap(laserbmp, null, lDest, paint);
+                }
+
                 paint.setAntiAlias(true);
-                paint.setColor(Color.argb(200, 120, 120, 120));
+                paint.setColor(Color.argb(200, 130, 130, 130));
                 canvas.drawRect(leftButtonRect, paint);
                 canvas.drawRect(rightButtonRect, paint);
                 //canvas.drawRect(fireButtonRect, paint);
                 paint.setColor(Color.WHITE);
                 paint.setTextSize(60);
-
+                canvas.drawText("value: " + (int) (percentToHeight(laserYPos) - percentToWidth(playerSize * 6f/16f))
+                        + " value 2: " + (int) percentToHeight(laserYPos), 20, 80, paint);
 
                 holder.unlockCanvasAndPost(canvas);
             }
