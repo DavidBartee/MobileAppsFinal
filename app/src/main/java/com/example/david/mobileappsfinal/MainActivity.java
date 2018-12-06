@@ -18,9 +18,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         scoreboardText = findViewById(R.id.scoreboardText);
-        scoreboardText.setText("Here is a sample scoreboard:" +
-                "\nDCB\t\t\t687" +
-                "\nDCB\t\t\t589");
+        scoreboardText.setText("There are no high scores yet!");
 
         startGameButton = findViewById(R.id.startGameButton);
         startGameButton.setOnClickListener(new View.OnClickListener() {

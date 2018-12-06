@@ -16,41 +16,46 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 public class GameActivity extends Activity {
 
     GameView gameView;
+    protected static int height;
+    protected static int width;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        height = Resources.getSystem().getDisplayMetrics().heightPixels;
+        width = Resources.getSystem().getDisplayMetrics().widthPixels;
 
         gameView = new GameView (this);
         setContentView(gameView);
 
     }
 
+    protected static float percentToWidth(float value) {return value * width / 100f;}
+    protected static float percentToHeight(float value) {return value * height / 100f;}
+
     class GameView extends SurfaceView implements Runnable {
         Thread gameThread = null;
         SurfaceHolder holder;
         volatile boolean isPlaying;
 
-        int height = Resources.getSystem().getDisplayMetrics().heightPixels;
-        int width = Resources.getSystem().getDisplayMetrics().widthPixels;
-
         Canvas canvas;
         Paint paint;
-        long fps;
+        long fps = 1;
         private long timeThisFrame;
 
         int playerScore = 0;
+        boolean gameOver = false;
 
         Bitmap playerbmp;
         int moveDirection = 0;
         //Units of movement and position are in percentages of the screen space
-        float moveSpeed = 18;
+        float moveSpeed = 75;
         float playerSize = 13;
         float playerXpos = 50;
         float playerYpos = 70;
@@ -66,35 +71,26 @@ public class GameActivity extends Activity {
                 (int)(percentToHeight(playerRect.top) - percentToWidth(playerSize * 3f/8f)),
                 (int)percentToWidth(50 + playerSize / 16f),
                 (int)percentToHeight(playerRect.top));
-        float laserSpeed = 15;
+        float laserSpeed = 100;
         boolean laserActive = true;
 
-        ArrayList<Rect> enemyRects = new ArrayList<Rect>();
-        ArrayList<Float> enemyXpositions = new ArrayList<Float>();
-        ArrayList<Float> enemyYpositions = new ArrayList<Float>();
-        ArrayList<Boolean> enemiesActive = new ArrayList<Boolean>();
-        float enemySpeed = 15;
+        ArrayList<GameObject> enemies = new ArrayList<GameObject>();
+        float enemySpeed = 20;
 
-        int numEnemiesAtOnce = 4;
+        int numStartingEnemies = 4;
         int pointsPerEnemy = 50;
         Bitmap enemy1bmp;
 
         Rect leftButtonRect = new Rect((int)percentToWidth(0), (int)percentToHeight(80), (int)percentToWidth(49), (int)percentToHeight(100));
         Rect rightButtonRect = new Rect((int)percentToWidth(51), (int)percentToHeight(80), (int)percentToWidth(100), (int)percentToHeight(100));
-        //Rect fireButtonRect = new Rect((int)percentToWidth(65), (int)percentToHeight(80), (int)percentToWidth(100), (int)percentToHeight(100));
 
-        public float percentToWidth (float value) {
-            return (float)width * value / 100f;
-        }
-        public float percentToHeight (float value) {
-            return (float)height * value / 100f;
-        }
+        Random rng = new Random();
 
         public GameView(Context context) {
             super(context);
             holder = getHolder();
             paint = new Paint();
-            playerbmp = BitmapFactory.decodeResource(this.getResources(), R.drawable.player_ship);
+            playerbmp = BitmapFactory.decodeResource(this.getResources(), R.drawable.player_shipv2);
             laserbmp = BitmapFactory.decodeResource(this.getResources(), R.drawable.player_laser);
             enemy1bmp = BitmapFactory.decodeResource(this.getResources(), R.drawable.enemy1);
 
@@ -103,17 +99,14 @@ public class GameActivity extends Activity {
             laserXpos = laserRect.left / (float)width * 100;
             laserYpos = laserRect.top / (float)height * 100;
 
-            Random rng = new Random();
-            for (int i = 0; i < numEnemiesAtOnce; i++) {
-                enemyXpositions.add(rng.nextFloat() * 85f + 7.5f);
-                enemyYpositions.add(0f);
-                enemyRects.add(new Rect(
-                        (int)percentToWidth(enemyXpositions.get(i)),
-                        (int)percentToHeight(enemyYpositions.get(i)),
-                        (int)percentToWidth(enemyXpositions.get(i) + playerSize),
-                        (int)(percentToHeight(enemyYpositions.get(i)) + percentToWidth(playerSize))
+            for (int i = 0; i < numStartingEnemies; i++) {
+                enemies.add(new GameObject(
+                        rng.nextFloat() * (85 - playerSize) + 7.5f,
+                        rng.nextFloat() * -10f - 10f,
+                        playerSize,
+                        true,
+                        enemy1bmp
                 ));
-                enemiesActive.add(true);
             }
         }
 
@@ -132,17 +125,34 @@ public class GameActivity extends Activity {
         }
 
         public void update() {
+            if (gameOver) {
+                isPlaying = false;
+                return;
+            }
+            for (GameObject obj : enemies) {
+                if (obj != null && obj.isActive) {
+                    if (Rect.intersects(obj.rect, playerRect)) {
+                        gameOver = true;
+                    } else if (Rect.intersects(obj.rect, laserRect)) {
+                        obj.isActive = false;
+                        playerScore += pointsPerEnemy;
+                        laserActive = false;
+                    }
+                }
+            }
+
             final float playerXbefore = playerXpos;
             final float laserXbefore = laserXpos;
             final float laserYbefore = laserYpos;
+
             if (moveDirection != 0) {
-                playerXpos += (percentToWidth(moveSpeed) / fps) * moveDirection;
+                playerXpos += moveSpeed / fps * moveDirection;
                 if (playerXpos < 3)
                     playerXpos = 3;
                 if (playerXpos > 97 - playerSize)//20 is used as the player's size
                     playerXpos = 97 - playerSize;
             }
-            laserYpos -= percentToHeight(laserSpeed) / fps;
+            laserYpos -= laserSpeed / fps;
             if (laserYpos < 1) {
                 laserYpos = 68;
                 laserXpos = playerXpos + playerSize * 7f/16f;
@@ -152,10 +162,13 @@ public class GameActivity extends Activity {
             playerRect.right = (int)percentToWidth(playerXpos + playerSize);
             laserRect.offsetTo((int)percentToWidth(laserXpos), (int)percentToHeight(laserYpos));
 
-            for (Rect r : enemyRects) {
-                int index = enemyRects.indexOf(r);
-                enemyYpositions.set(index, enemyYpositions.get(index) + percentToHeight(enemySpeed) / fps);
-                r.offsetTo(r.left, Math.round(enemyYpositions.get(index)));
+            for (GameObject obj : enemies) {
+                obj.movePosition(0, enemySpeed / fps);
+                if (obj.rect.top > height) {
+                    obj.Xpos = rng.nextFloat() * (85 - playerSize) + 7.5f;
+                    obj.movePosition(0, -100f - obj.rect.height() / (float)height * 100f);
+                    obj.isActive = true;
+                }
             }
         }
 
@@ -164,7 +177,7 @@ public class GameActivity extends Activity {
                 canvas = holder.lockCanvas();
                 canvas.drawColor(Color.argb(255, 0, 0 ,30));
                 paint.setColor(Color.argb(255, 255, 255, 255));
-                paint.setTextSize(45);
+                paint.setTextSize(40);
                 canvas.drawText("FPS: " + fps, 20, 40, paint);
 
                 paint.setAntiAlias(false);
@@ -174,11 +187,12 @@ public class GameActivity extends Activity {
                 if (laserActive) {
                     canvas.drawBitmap(laserbmp, null, laserRect, paint);
                 }
-
-                for (Rect r : enemyRects) {
-                    int index = enemyRects.indexOf(r);
-                    if (enemiesActive.get(index)) {
-                        canvas.drawBitmap(enemy1bmp, null, r, paint);
+                GameObject firstEnemy = null;
+                for (GameObject obj : enemies) {
+                    if (obj != null && obj.isActive) {
+                        canvas.drawBitmap(obj.bmp, null, obj.rect, paint);
+                        if (enemies.indexOf(obj) == 0)
+                            firstEnemy = obj;
                     }
                 }
 
@@ -190,6 +204,14 @@ public class GameActivity extends Activity {
                 paint.setTextSize(40);
                 /*canvas.drawText(laserRect.flattenToString(), 20, 80, paint);
                 canvas.drawText("laserXpos: " + laserXpos, 20, 120, paint);*/
+                /*if (firstEnemy != null) {
+                    canvas.drawText(firstEnemy.rect.flattenToString(), 20, 80, paint);
+                    canvas.drawText("Ypos: " + firstEnemy.Ypos, 20, 120, paint);
+                }*/
+                canvas.drawText("Score: " + playerScore, 20, 80, paint);
+                if (gameOver) {
+                    canvas.drawText("GAME OVER", 50, 200, paint);
+                }
 
                 holder.unlockCanvasAndPost(canvas);
             }
@@ -241,6 +263,15 @@ public class GameActivity extends Activity {
     protected void onPause() {
         super.onPause();
         gameView.pause();
+    }
+    @Override
+    public void onBackPressed() {
+        //Allow back press with closing the activity + intent when game is over
+        if (gameView.gameOver) {
+            //Intent here, send score and save
+            this.finish();
+            super.onBackPressed();
+        }
     }
 
 }
