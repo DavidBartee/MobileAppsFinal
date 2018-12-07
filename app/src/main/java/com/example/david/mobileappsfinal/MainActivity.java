@@ -7,15 +7,28 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.File;
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity {
 
     TextView scoreboardText;
     Button startGameButton;
 
+    public static ArrayList<ScoreData> scores = new ArrayList<ScoreData>();
+    public static final String scoresFilename = "scores.data";
+    File directory = getBaseContext().getFilesDir();
+    File saveFile;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (getBaseContext().getFileStreamPath(scoresFilename).exists()) {
+
+        }
 
         scoreboardText = findViewById(R.id.scoreboardText);
         scoreboardText.setText("There are no high scores yet!");
