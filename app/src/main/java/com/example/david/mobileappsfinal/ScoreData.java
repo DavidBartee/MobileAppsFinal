@@ -10,8 +10,8 @@ public class ScoreData {
 
     public ScoreData(int score) {
         this.score = score;
-        Date currentTime = Calendar.getInstance().getTime();
-        dateAndTime = Calendar.MONTH + "/" + Calendar.DATE + "/" + Calendar.YEAR + " " + currentTime.toString();
+        Calendar cal = Calendar.getInstance();
+        dateAndTime = cal.get(Calendar.MONTH) + "/" + cal.get(Calendar.DATE) + "/" + cal.get(Calendar.YEAR);
     }
     public ScoreData(int score, String date) {
         this.score = score;

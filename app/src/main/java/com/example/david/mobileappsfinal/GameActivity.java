@@ -2,6 +2,7 @@ package com.example.david.mobileappsfinal;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -23,6 +24,10 @@ public class GameActivity extends Activity {
     GameView gameView;
     protected static int height;
     protected static int width;
+    protected int previousBest = 0;
+    protected int playerScore = 0;
+
+    public final static String NEW_BEST = "newBestKey";
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -30,6 +35,9 @@ public class GameActivity extends Activity {
 
         height = Resources.getSystem().getDisplayMetrics().heightPixels;
         width = Resources.getSystem().getDisplayMetrics().widthPixels;
+
+        Intent gameIntent = getIntent();
+        previousBest = gameIntent.getIntExtra(MainActivity.PREVIOUS_BEST, 0);
 
         gameView = new GameView (this);
         setContentView(gameView);
@@ -46,10 +54,9 @@ public class GameActivity extends Activity {
 
         Canvas canvas;
         Paint paint;
-        long fps = 1;
+        long fps = 10000;
         private long timeThisFrame;
 
-        int playerScore = 0;
         boolean gameOver = false;
 
         Bitmap playerbmp;
@@ -66,18 +73,18 @@ public class GameActivity extends Activity {
 
         Bitmap laserbmp;
         float laserXpos = 52;
-        float laserYpos = 800;
+        float laserYpos = 100;
         Rect laserRect = new Rect((int)percentToWidth(50 - playerSize / 16f),
-                (int)(percentToHeight(playerRect.top) - percentToWidth(playerSize * 3f/8f)),
+                (int)(playerRect.top - percentToWidth(playerSize * 3f/8f)),
                 (int)percentToWidth(50 + playerSize / 16f),
-                (int)percentToHeight(playerRect.top));
+                (int)playerRect.top);
         float laserSpeed = 100;
         boolean laserActive = true;
 
         ArrayList<GameObject> enemies = new ArrayList<GameObject>();
         float enemySpeed = 20;
 
-        int numStartingEnemies = 4;
+        int numStartingEnemies = 6;
         int pointsPerEnemy = 50;
         Bitmap enemy1bmp;
 
@@ -133,12 +140,23 @@ public class GameActivity extends Activity {
                 if (obj != null && obj.isActive) {
                     if (Rect.intersects(obj.rect, playerRect)) {
                         gameOver = true;
-                    } else if (Rect.intersects(obj.rect, laserRect)) {
+                        return;
+                    } else if (laserActive && Rect.intersects(obj.rect, laserRect)) {
                         obj.isActive = false;
                         playerScore += pointsPerEnemy;
                         laserActive = false;
                     }
                 }
+            }
+            if (playerScore / 400 > enemies.size() - numStartingEnemies) {
+                enemies.add(new GameObject(
+                        rng.nextFloat() * (85 - playerSize) + 7.5f,
+                        rng.nextFloat() * -10f - 10f,
+                        playerSize,
+                        true,
+                        enemy1bmp
+                ));
+                laserSpeed += 5;
             }
 
             final float playerXbefore = playerXpos;
@@ -166,7 +184,7 @@ public class GameActivity extends Activity {
                 obj.movePosition(0, enemySpeed / fps);
                 if (obj.rect.top > height) {
                     obj.Xpos = rng.nextFloat() * (85 - playerSize) + 7.5f;
-                    obj.movePosition(0, -100f - obj.rect.height() / (float)height * 100f);
+                    obj.movePosition(0, -100f + (rng.nextFloat() * -25f) - obj.rect.height() / (float)height * 100f);
                     obj.isActive = true;
                 }
             }
@@ -211,6 +229,10 @@ public class GameActivity extends Activity {
                 canvas.drawText("Score: " + playerScore, 20, 80, paint);
                 if (gameOver) {
                     canvas.drawText("GAME OVER", 50, 200, paint);
+                    canvas.drawText("Press back to return", 20, 300, paint);
+                    if (playerScore > previousBest) {
+                        canvas.drawText("NEW HIGH SCORE!", 30, 250, paint);
+                    }
                 }
 
                 holder.unlockCanvasAndPost(canvas);
@@ -268,7 +290,9 @@ public class GameActivity extends Activity {
     public void onBackPressed() {
         //Allow back press with closing the activity + intent when game is over
         if (gameView.gameOver) {
-            //Intent here, send score and save
+            Intent endGameIntent = new Intent(GameActivity.this, MainActivity.class);
+            endGameIntent.putExtra(NEW_BEST, playerScore);
+            startActivity(endGameIntent);
             this.finish();
             super.onBackPressed();
         }
