@@ -1,9 +1,10 @@
 package com.example.david.mobileappsfinal;
 
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 
-public class ScoreData {
+public class ScoreData implements Serializable {
 
     int score;
     String dateAndTime;

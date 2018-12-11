@@ -1,5 +1,6 @@
 package com.example.david.mobileappsfinal;
 
+import android.content.Context;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -7,6 +8,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,8 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static ArrayList<ScoreData> scores = new ArrayList<ScoreData>();
     public static final String scoresFilename = "scores.data";
-    /*File directory = getBaseContext().getFilesDir();
-    File saveFile;*/
+    FileOutputStream outputStream;
 
     public final static String PREVIOUS_BEST = "previousBestKey";
 
@@ -29,7 +34,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         if (getBaseContext().getFileStreamPath(scoresFilename).exists()) {
-
+            try {
+                FileInputStream inputStream = openFileInput(scoresFilename);
+                ObjectInputStream oos = new ObjectInputStream(inputStream);
+                scores = (ArrayList<ScoreData>) oos.readObject();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         Intent previousGameIntent = getIntent();
@@ -46,6 +57,16 @@ public class MainActivity extends AppCompatActivity {
             if (scores.get(i).score == 0) {
                 scores.remove(i);
             }
+        }
+
+        try {
+            outputStream = openFileOutput(scoresFilename, Context.MODE_PRIVATE);
+            ObjectOutputStream oos = new ObjectOutputStream(outputStream);
+            oos.writeObject(scores);
+            oos.close();
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         scoresText = findViewById(R.id.scoresText);

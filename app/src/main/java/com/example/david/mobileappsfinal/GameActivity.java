@@ -156,7 +156,7 @@ public class GameActivity extends Activity {
                         true,
                         enemy1bmp
                 ));
-                laserSpeed += 5;
+                laserSpeed += 6;
             }
 
             final float playerXbefore = playerXpos;
