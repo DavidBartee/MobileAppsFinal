@@ -7,13 +7,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 public class MainActivity extends AppCompatActivity {
 
-    TextView scoreboardText;
+    TextView scoresText;
+    TextView datesText;
     Button startGameButton;
 
     public static ArrayList<ScoreData> scores = new ArrayList<ScoreData>();
@@ -49,17 +48,25 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        scoreboardText = findViewById(R.id.scoreboardText);
+        scoresText = findViewById(R.id.scoresText);
+        datesText = findViewById(R.id.datesText);
         if (scores.size() > 0) {
             String allScores = "";
+            String allDates = "";
             for (int i = 0; i < scores.size(); i++) {
-                allScores += scores.get(i).score + "\t" + scores.get(i).dateAndTime;
-                if (i < 9)
+                allScores += scores.get(i).score;
+                allDates += scores.get(i).dateAndTime;
+                if (i < 9) {
                     allScores += "\n";
+                    allDates += "\n";
+                }
             }
-            scoreboardText.setText(allScores);
-        } else
-            scoreboardText.setText("There are no high scores yet!");
+            scoresText.setText(allScores);
+            datesText.setText(allDates);
+        } else {
+            scoresText.setText("There are no high scores yet!");
+            datesText.setText("");
+        }
 
         startGameButton = findViewById(R.id.startGameButton);
         startGameButton.setOnClickListener(new View.OnClickListener() {

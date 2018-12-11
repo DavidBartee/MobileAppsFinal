@@ -11,7 +11,7 @@ public class ScoreData {
     public ScoreData(int score) {
         this.score = score;
         Calendar cal = Calendar.getInstance();
-        dateAndTime = cal.get(Calendar.MONTH) + "/" + cal.get(Calendar.DATE) + "/" + cal.get(Calendar.YEAR);
+        dateAndTime = (cal.get(Calendar.MONTH) + 1) + "/" + cal.get(Calendar.DATE) + "/" + cal.get(Calendar.YEAR);
     }
     public ScoreData(int score, String date) {
         this.score = score;
