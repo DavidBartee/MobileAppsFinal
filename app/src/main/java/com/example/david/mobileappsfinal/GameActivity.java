@@ -218,6 +218,10 @@ public class GameActivity extends Activity {
                 paint.setColor(Color.argb(200, 130, 130, 130));
                 canvas.drawRect(leftButtonRect, paint);
                 canvas.drawRect(rightButtonRect, paint);
+                paint.setColor(Color.BLACK);
+                paint.setTextSize(60);
+                canvas.drawText("LEFT", leftButtonRect.left + leftButtonRect.width() / 6, leftButtonRect.top + leftButtonRect.height() * 0.4f, paint);
+                canvas.drawText("RIGHT", rightButtonRect.left + rightButtonRect.width() / 8, rightButtonRect.top + rightButtonRect.height() * 0.4f, paint);
                 paint.setColor(Color.WHITE);
                 paint.setTextSize(40);
                 /*canvas.drawText(laserRect.flattenToString(), 20, 80, paint);
